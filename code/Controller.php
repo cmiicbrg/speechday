@@ -202,7 +202,11 @@ class Controller {
         }
 
         $targetPath = $folder . DIRECTORY_SEPARATOR . $name;
-        move_uploaded_file($tmpName, $targetPath);
+        $success = move_uploaded_file($tmpName, $targetPath);
+        if (!$this->validateFileExtension($ext, array('csv'))) {
+            echo 'Error during upload! Is the uploads directory writable by the webserver-user?';
+            return;
+        }
         return $targetPath;
     }
 

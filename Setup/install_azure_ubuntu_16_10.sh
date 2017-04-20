@@ -1,6 +1,28 @@
 #!/bin/bash
+if grep --quiet 'PRETTY_NAME="Ubuntu 16.10"' /etc/os-release; then
+
+echo This skript will mess up your installation of Nginx, your Webroot,... if not run on a fresh install!
+echo This skript will
+echo - setup nginx with https optaining a cert from letsencrypt
+echo - tune some php-fpm and nginx options
+echo - checkout esv from github
+echo - setup database for esv
+read -r -p "Are you sure? [y/N] " response
+if [[ "$response" =~ ^([yY][eE][sS]|[yY])+$ ]]
+then
+
+echo Please make sure you
+echo - already installed nginx, php-fpm, mysql and git
+echo - have your mysql root password at hand
+read -r -p "Ready to go? [y/N] " response
+if [[ "$response" =~ ^([yY][eE][sS]|[yY])+$ ]]
+then
+
 read -p 'Please enter the domainname under which the server IS reachable (configure DNS first!): ' domainname
 read -s -p 'Please enter MYSQL root password (we will autmatically create a user for the ESV):' password
+read -p 'After how many minutes should there be a break? (Use a multiple of 30. Default: 30):' breakfrequency
+
+
 
 esvmysqlpass=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${1:-32};echo;)
 esvadminpass=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${1:-32};echo;)
@@ -8,7 +30,7 @@ esvadminhash=`php << EOF
     <?php echo password_hash("${esvadminpass}", PASSWORD_DEFAULT); ?>
 EOF`
 
-add-apt-repository ppa:certbot/certbot
+add-apt-repository ppa:certbot/certbot -y
 apt-get update
 apt-get install certbot
 
@@ -141,20 +163,16 @@ systemctl enable nginx.service
 systemctl restart nginx.service
 
 sed --in-place 's/;emergency_restart_threshold = 0/emergency_restart_threshold = 10/g' /etc/php/7.0/fpm/php-fpm.conf
-
 sed --in-place 's/;emergency_restart_interval = 0/emergency_restart_interval = 1m/g' /etc/php/7.0/fpm/php-fpm.conf
-
 sed --in-place 's/;process_control_timeout = 0/process_control_timeout = 10s/g' /etc/php/7.0/fpm/php-fpm.conf
-
 sed --in-place 's/pm.max_children = 5/pm.max_children = 25/g' /etc/php/7.0/fpm/pool.d/www.conf
-
 sed --in-place 's/pm.start_servers = 2/pm.start_servers = 12/g' /etc/php/7.0/fpm/pool.d/www.conf
-
 sed --in-place 's/pm.min_spare_servers = 1/pm.min_spare_servers = 10/g' /etc/php/7.0/fpm/pool.d/www.conf
-
 sed --in-place 's/pm.max_spare_servers = 3/pm.max_spare_servers = 15/g' /etc/php/7.0/fpm/pool.d/www.conf
-
 sed --in-place 's/;pm.max_requests = 500/pm.max_requests = 500/g' /etc/php/7.0/fpm/pool.d/www.conf
+
+systemctl enable php5-fpm.service
+systemctl restart php5-fpm.service
 
 git checkout https://github.com/gymdb/speechday.git /var/www/html
 
@@ -168,9 +186,27 @@ esv@localhost IDENTIFIED BY '${esvmysqlpass}';"
 mysql -u root -p$password -e "flush privileges;"
 mysql -u root -p$password </var/www/html/Setup/database.sql
 
+#TODO this is a little hacky..
+if [[ "$breakfrequency" =~ ^(([60]|[90]|[120]))+$ ]]
+then
+sed --in-place "s/($breakCounter) % 30/($breakCounter) % $(breakfrequency)/g" /var/www/html/code/dao/SlotDAO.php
+fi
+
 echo All set. Go to https://${domainname}. User is admin and password is ${esvadminpass}
 
 unset password
 unset esvmysqlpass
 unset esvadminpass
 unset esvadminhash
+
+else
+    echo use
+    echo sudo apt-get install git nginx mysql-server php-fpm php-mysql vim
+    echo install the basics
+fi
+else
+    echo exiting
+fi
+else
+    echo This is not Ubuntu 16.10, exiting. You can still use the skript or parts thereof (but be prepared for surprises).
+fi

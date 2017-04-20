@@ -28,7 +28,7 @@ echo Some more input will be needed during the process - stand by.
 esvmysqlpass=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${1:-32};echo;)
 esvadminpass=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${1:-32};echo;)
 esvadminhash=`php << EOF
-    <?php echo password_hash("${esvadminpass}", PASSWORD_DEFAULT); ?>
+<?php echo password_hash("${esvadminpass}", PASSWORD_DEFAULT); ?>
 EOF`
 
 add-apt-repository ppa:certbot/certbot -y
@@ -188,6 +188,8 @@ mysql -u root -p$password -e "GRANT SELECT,INSERT,UPDATE,DELETE,CREATE,CREATE TE
 esv@localhost IDENTIFIED BY '${esvmysqlpass}';"
 mysql -u root -p$password -e "flush privileges;"
 mysql -u root -p$password </var/www/html/Setup/database.sql
+esvadminhash=$(echo $esvadminhash)
+mysql -u root -p$password -e "UPDATE esv.user SET passwordHash='$esvadminhash' WHERE id='1';"
 
 #TODO this is a little hacky..
 if [[ "$breakfrequency" =~ ^(([30]|[60]|[90]|[120]))+$ ]]
@@ -199,8 +201,6 @@ fi
 sed --in-place "s/user = root/user = esv/g" /var/www/html/code/dao/settings.ini
 sed --in-place "s/password =/password = $esvmysqlpass/g" /var/www/html/code/dao/settings.ini
 sed --in-place "s/dbname = speechday/dbname = esv/g" /var/www/html/code/dao/settings.ini
-
-
 
 echo All set. Go to https://${domainname}. User is admin and password is ${esvadminpass}
 

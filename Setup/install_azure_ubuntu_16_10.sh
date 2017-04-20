@@ -5,8 +5,8 @@ echo This skript will mess up your installation of Nginx, your Webroot,... if no
 echo This skript will
 echo - setup nginx with https optaining a cert from letsencrypt
 echo - tune some php-fpm and nginx options
-echo - checkout esv from github
-echo - setup database for esv
+echo - checkout speechday from github
+echo - setup database for speechday
 read -r -p "Are you sure? [y/N] " response
 if [[ "$response" =~ ^([yY][eE][sS]|[yY])+$ ]]
 then
@@ -20,16 +20,18 @@ if [[ "$response" =~ ^([yY][eE][sS]|[yY])+$ ]]
 then
 
 read -p 'Please enter the domainname under which the server IS reachable (configure DNS first!): ' domainname
-read -s -p 'Please enter MYSQL root password (we will autmatically create a user for the ESV):' password
+read -s -p 'Please enter MYSQL root password (we will autmatically create a user for speechday):' password
 echo
 read -p 'After how many minutes should there be a break? (Use a multiple of 30. Default: 30):' breakfrequency
 
+echo
 echo Some more input will be needed during the process - stand by.
+echo
 
-esvmysqlpass=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${1:-32};echo;)
-esvadminpass=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${1:-32};echo;)
-esvadminhash=`php << EOF
-<?php echo password_hash("${esvadminpass}", PASSWORD_DEFAULT); ?>
+speechdaymysqlpass=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${1:-32};echo;)
+speechdayadminpass=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${1:-32};echo;)
+speechdayadminhash=`php << EOF
+<?php echo password_hash("${speechdayadminpass}", PASSWORD_DEFAULT); ?>
 EOF`
 
 add-apt-repository ppa:certbot/certbot -y
@@ -40,7 +42,7 @@ certbot certonly --webroot -w /var/www/html -d ${domainname}
 
 mv /etc/nginx/sites-available/default /etc/nginx/sites-available/default.pkg
 
-cat >/etc/nginx/sites-available/default <<EOL
+cat >/etc/nginx/sites-available/default <<'EOL'
 server {
     listen 80 default_server;
     listen [::]:80 default_server;
@@ -59,7 +61,7 @@ server {
 }
 EOL
 
-cat >/etc/nginx/sites-available/esv <<EOL
+cat >/etc/nginx/sites-available/speechday <<'EOL'
 server {
     # SSL configuration
     #
@@ -122,10 +124,10 @@ server {
 }
 EOL
 
-ln -s /etc/nginx/sites-available/esv /etc/nginx/sites-enabled/esv
+ln -s /etc/nginx/sites-available/speechday /etc/nginx/sites-enabled/speechday
 ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
 
-cat >/etc/nginx/snippets/myphp.conf <<EOL
+cat >/etc/nginx/snippets/myphp.conf <<'EOL'
 # pass the PHP scripts to FastCGI server
 location ~ \.php$ {
     include snippets/fastcgi-php.conf;
@@ -184,13 +186,13 @@ chown -R root:www-data /var/www/html
 chmod -R 750 /var/www/html
 chmod -R 770 /var/www/html/uploads
 
-mysql -u root -p$password -e "CREATE DATABASE esv DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci;"
-mysql -u root -p$password -e "GRANT SELECT,INSERT,UPDATE,DELETE,CREATE,CREATE TEMPORARY TABLES,DROP,INDEX,ALTER ON esv.* TO
-esv@localhost IDENTIFIED BY '${esvmysqlpass}';"
+mysql -u root -p$password -e "CREATE DATABASE speechday DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci;"
+mysql -u root -p$password -e "GRANT SELECT,INSERT,UPDATE,DELETE,CREATE,CREATE TEMPORARY TABLES,DROP,INDEX,ALTER ON speechday.* TO
+speechday@localhost IDENTIFIED BY '${speechdaymysqlpass}';"
 mysql -u root -p$password -e "flush privileges;"
 mysql -u root -p$password </var/www/html/Setup/database.sql
-esvadminhash=$(echo $esvadminhash)
-mysql -u root -p$password -e "UPDATE esv.user SET passwordHash='$esvadminhash' WHERE id='1';"
+speechdayadminhash=$(echo $speechdayadminhash)
+mysql -u root -p$password -e "UPDATE speechday.user SET passwordHash='$speechdayadminhash' WHERE id='1';"
 
 #TODO this is a little hacky..
 if [[ "$breakfrequency" =~ ^(([30]|[60]|[90]|[120]))+$ ]]
@@ -199,16 +201,16 @@ sed --in-place "s/breakCounter % 30/breakCounter % $breakfrequency/g" /var/www/h
 fi
 
 
-sed --in-place "s/user = root/user = esv/g" /var/www/html/code/dao/settings.ini
-sed --in-place "s/password =/password = $esvmysqlpass/g" /var/www/html/code/dao/settings.ini
-sed --in-place "s/dbname = speechday/dbname = esv/g" /var/www/html/code/dao/settings.ini
+sed --in-place "s/user = root/user = speechday/g" /var/www/html/code/dao/settings.ini
+sed --in-place "s/password =/password = $speechdaymysqlpass/g" /var/www/html/code/dao/settings.ini
+sed --in-place "s/dbname = speechday/dbname = speechday/g" /var/www/html/code/dao/settings.ini
 
-echo All set. Go to https://${domainname}. User is admin and password is ${esvadminpass}
+echo All set. Go to https://${domainname}. User is admin and password is ${speechdayadminpass}
 
 unset password
-unset esvmysqlpass
-unset esvadminpass
-unset esvadminhash
+unset speechdaymysqlpass
+unset speechdayadminpass
+unset speechdayadminhash
 
 else
     echo use

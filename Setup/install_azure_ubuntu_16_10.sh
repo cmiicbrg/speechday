@@ -49,7 +49,6 @@ server {
     server_name _;
 
     location /.well-known/acme-challenge/ {
-
         try_files $uri $uri/ =404;
     }
 
@@ -195,6 +194,13 @@ if [[ "$breakfrequency" =~ ^(([30]|[60]|[90]|[120]))+$ ]]
 then
 sed --in-place "s/breakCounter % 30/breakCounter % $breakfrequency/g" /var/www/html/code/dao/SlotDAO.php
 fi
+
+
+sed --in-place "s/user = root/user = esv/g" /var/www/html/code/dao/settings.ini
+sed --in-place "s/password =/password = $esvmysqlpass/g" /var/www/html/code/dao/settings.ini
+sed --in-place "s/dbname = speechday/dbname = esv/g" /var/www/html/code/dao/settings.ini
+
+
 
 echo All set. Go to https://${domainname}. User is admin and password is ${esvadminpass}
 

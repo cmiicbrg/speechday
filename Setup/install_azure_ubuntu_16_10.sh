@@ -13,6 +13,7 @@ then
 
 echo Please make sure you
 echo - already installed nginx, php-fpm, mysql and git
+echo - setup a dns record for the server
 echo - have your mysql root password at hand
 read -r -p "Ready to go? [y/N] " response
 if [[ "$response" =~ ^([yY][eE][sS]|[yY])+$ ]]

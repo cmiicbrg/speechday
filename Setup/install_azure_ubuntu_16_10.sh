@@ -20,9 +20,10 @@ then
 
 read -p 'Please enter the domainname under which the server IS reachable (configure DNS first!): ' domainname
 read -s -p 'Please enter MYSQL root password (we will autmatically create a user for the ESV):' password
+echo
 read -p 'After how many minutes should there be a break? (Use a multiple of 30. Default: 30):' breakfrequency
 
-
+echo Some more input will be needed during the process - stand by.
 
 esvmysqlpass=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${1:-32};echo;)
 esvadminpass=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${1:-32};echo;)
@@ -32,7 +33,7 @@ EOF`
 
 add-apt-repository ppa:certbot/certbot -y
 apt-get update
-apt-get install certbot
+apt-get install certbot -y
 
 certbot certonly --webroot -w /var/www/html -d ${domainname}
 
@@ -108,7 +109,7 @@ server {
 
     #allow access to login action
     location ~ /code/actions/ {
-        include snippets/myphp.conf
+        include snippets/myphp.conf;
     }
 
     # deny access to other directory
@@ -117,7 +118,7 @@ server {
             return 404;
     }
 
-    include snippets/myphp.conf
+    include snippets/myphp.conf;
 }
 EOL
 
@@ -135,6 +136,8 @@ location ~ \.php$ {
     fastcgi_temp_file_write_size 256k;
 }
 EOL
+
+openssl dhparam -out /etc/nginx/dhparams.pem 2048
 
 cat >/etc/nginx/snippets/ssl.conf <<EOL
 ssl_session_timeout 1d;
@@ -174,7 +177,8 @@ sed --in-place 's/;pm.max_requests = 500/pm.max_requests = 500/g' /etc/php/7.0/f
 systemctl enable php5-fpm.service
 systemctl restart php5-fpm.service
 
-git checkout https://github.com/gymdb/speechday.git /var/www/html
+rm -rf /var/www/html
+git clone https://github.com/gymdb/speechday.git /var/www/html
 
 chown -R root:www-data /var/www/html
 chmod -R 750 /var/www/html

@@ -208,5 +208,5 @@ else
     echo exiting
 fi
 else
-    echo This is not Ubuntu 16.10, exiting. You can still use the skript or parts thereof (but be prepared for surprises).
+    echo 'This is not Ubuntu 16.10, exiting. You can still use the skript or parts thereof (but be prepared for surprises).'
 fi

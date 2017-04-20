@@ -175,6 +175,9 @@ sed --in-place 's/pm.start_servers = 2/pm.start_servers = 12/g' /etc/php/7.0/fpm
 sed --in-place 's/pm.min_spare_servers = 1/pm.min_spare_servers = 10/g' /etc/php/7.0/fpm/pool.d/www.conf
 sed --in-place 's/pm.max_spare_servers = 3/pm.max_spare_servers = 15/g' /etc/php/7.0/fpm/pool.d/www.conf
 sed --in-place 's/;pm.max_requests = 500/pm.max_requests = 500/g' /etc/php/7.0/fpm/pool.d/www.conf
+sed --in-place 's/max_execution_time = 30/max_execution_time = 180/g' /etc/php/7.0/fpm/php.ini
+sed --in-place 's/max_input_time = 60/max_input_time = 240/g' /etc/php/7.0/fpm/php.ini
+sed --in-place 's/memory_limit = 128M/memory_limit = 256M/g' /etc/php/7.0/fpm/php.ini
 
 systemctl enable php7.0-fpm.service
 systemctl restart php7.0-fpm.service

@@ -203,10 +203,6 @@ class Controller {
 
         $targetPath = $folder . DIRECTORY_SEPARATOR . $name;
         $success = move_uploaded_file($tmpName, $targetPath);
-        if (!$this->validateFileExtension($ext, array('csv'))) {
-            echo 'Error during upload! Is the uploads directory writable by the webserver-user?';
-            return;
-        }
         return $targetPath;
     }
 
@@ -521,7 +517,7 @@ class Controller {
     }
 
     private function createNewsletter($template) {
-        $doc = new DOMDocument();
+        $doc = new DOMDocument('1.0', 'utf-8');
         $doc->loadXML($template);
         $root = $doc->documentElement;
 

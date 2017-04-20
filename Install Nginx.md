@@ -8,7 +8,7 @@ vi /etc/nginx/sites-enabled/YOUR_CONFIG
 #Installing on ubuntu 16.10 with nginx (tested on azure virtual machine)
 Install prerequisites:
 ```
-sudo apt-get install git nginx mysql-server php-fpm php-mysql vim
+sudo apt-get install git nginx mysql-server php-fpm php-mysql php7.0-zip php-mbstring php-xml php-intl vim
 ```
 
 Download the install skript:

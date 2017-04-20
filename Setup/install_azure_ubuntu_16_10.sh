@@ -174,8 +174,8 @@ sed --in-place 's/pm.min_spare_servers = 1/pm.min_spare_servers = 10/g' /etc/php
 sed --in-place 's/pm.max_spare_servers = 3/pm.max_spare_servers = 15/g' /etc/php/7.0/fpm/pool.d/www.conf
 sed --in-place 's/;pm.max_requests = 500/pm.max_requests = 500/g' /etc/php/7.0/fpm/pool.d/www.conf
 
-systemctl enable php5-fpm.service
-systemctl restart php5-fpm.service
+systemctl enable php7.0-fpm.service
+systemctl restart php7.0-fpm.service
 
 rm -rf /var/www/html
 git clone https://github.com/gymdb/speechday.git /var/www/html
@@ -191,9 +191,9 @@ mysql -u root -p$password -e "flush privileges;"
 mysql -u root -p$password </var/www/html/Setup/database.sql
 
 #TODO this is a little hacky..
-if [[ "$breakfrequency" =~ ^(([60]|[90]|[120]))+$ ]]
+if [[ "$breakfrequency" =~ ^(([30]|[60]|[90]|[120]))+$ ]]
 then
-sed --in-place "s/($breakCounter) % 30/($breakCounter) % $(breakfrequency)/g" /var/www/html/code/dao/SlotDAO.php
+sed --in-place "s/breakCounter % 30/breakCounter % $breakfrequency/g" /var/www/html/code/dao/SlotDAO.php
 fi
 
 echo All set. Go to https://${domainname}. User is admin and password is ${esvadminpass}
